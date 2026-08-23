@@ -22,11 +22,6 @@ class Room(models.Model):
     def __str__(self):
         return f"{self.center.name} — {self.number}"
 
-    # Обліковий запис для входу в кабінет — не у всіх резидентів він є
-    user_account = models.OneToOneField(
-        User, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='resident_profile', verbose_name="Обліковий запис"
-    )
 
 class Resident(models.Model):
     class Gender(models.TextChoices):
@@ -53,6 +48,12 @@ class Resident(models.Model):
 
     room = models.ForeignKey(
         'Room', on_delete=models.PROTECT, null=True, blank=True, verbose_name="Кімната"
+    )
+    
+        # Обліковий запис для входу в кабінет — не у всіх резидентів він є
+    user_account = models.OneToOneField(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='resident_profile', verbose_name="Обліковий запис"
     )
 
     roles = models.ManyToManyField(Role, blank=True, verbose_name="Ролі")
