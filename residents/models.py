@@ -14,14 +14,6 @@ class Role(models.Model):
     def __str__(self):
         return self.name
 
-class StaffProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="Користувач")
-    center = models.ForeignKey(
-        Center, on_delete=models.SET_NULL, null=True, blank=True,
-        verbose_name="Основний центр"
-    )
-    def __str__(self):
-        return f"{self.user.username} — {self.center.name if self.center else 'Без центру'}"
 class Room(models.Model):
     number = models.CharField(max_length=30, verbose_name="Номер/назва кімнати")
     center = models.ForeignKey(Center, on_delete=models.CASCADE, verbose_name="Центр")
@@ -29,6 +21,12 @@ class Room(models.Model):
 
     def __str__(self):
         return f"{self.center.name} — {self.number}"
+
+    # Обліковий запис для входу в кабінет — не у всіх резидентів він є
+    user_account = models.OneToOneField(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='resident_profile', verbose_name="Обліковий запис"
+    )
 
 class Resident(models.Model):
     class Gender(models.TextChoices):
@@ -109,3 +107,45 @@ class Resident(models.Model):
         init_i = f" {self.first_name[0]}." if self.first_name else ""
         init_o = f" {self.middle_name[0]}." if self.middle_name else ""
         return f"{self.last_name}{init_i}{init_o}"
+
+class Position(models.Model):
+    """Посада — фіксований список рівнів доступу, тому Level всередині."""
+    class Level(models.TextChoices):
+        OWNER = 'owner', 'Власник'
+        BRANCH_DIRECTOR = 'branch_director', 'Директор філії'
+        CENTER_DIRECTOR = 'center_director', 'Директор центру'
+        ADMIN_1 = 'admin_1', 'Адміністратор 1'
+        ADMIN_2 = 'admin_2', 'Адміністратор 2'
+        ADMIN_3 = 'admin_3', 'Адміністратор 3'
+
+    name = models.CharField(max_length=100, verbose_name="Назва посади")
+    level = models.CharField(max_length=20, choices=Level.choices, verbose_name="Рівень доступу")
+
+    def __str__(self):
+        return self.name
+
+
+class PositionAssignment(models.Model):
+    """Період, коли конкретний резидент займав конкретну посаду.
+    date_to = None означає, що призначення досі активне."""
+    resident = models.ForeignKey(Resident, on_delete=models.CASCADE, verbose_name="Резидент")
+    position = models.ForeignKey(Position, on_delete=models.CASCADE, verbose_name="Посада")
+    date_from = models.DateField(verbose_name="Дата призначення")
+    date_to = models.DateField(null=True, blank=True, verbose_name="Дата завершення")
+
+    def __str__(self):
+        period = f"{self.date_from} — {self.date_to or 'дотепер'}"
+        return f"{self.resident} на посаді «{self.position}» ({period})"
+
+
+class ActionLog(models.Model):
+    """Розпорядження/дії в рамках конкретного призначення на посаду."""
+    assignment = models.ForeignKey(
+        PositionAssignment, on_delete=models.CASCADE,
+        related_name='actions', verbose_name="Призначення"
+    )
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Дата дії")
+    description = models.TextField(verbose_name="Опис дії")
+
+    def __str__(self):
+        return f"{self.date:%d.%m.%Y} — {self.description[:50]}"
