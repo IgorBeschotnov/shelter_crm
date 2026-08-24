@@ -49,7 +49,7 @@ class Resident(models.Model):
     room = models.ForeignKey(
         'Room', on_delete=models.PROTECT, null=True, blank=True, verbose_name="Кімната"
     )
-    
+
         # Обліковий запис для входу в кабінет — не у всіх резидентів він є
     user_account = models.OneToOneField(
         User, on_delete=models.SET_NULL, null=True, blank=True,
@@ -83,6 +83,10 @@ class Resident(models.Model):
         help_text="Довільні дані (захворювання, суди, пільги тощо)",
     )
 
+    avatar = models.ImageField(
+        upload_to='avatars/', null=True, blank=True, verbose_name="Фото"
+        )
+    
     class Meta:
         verbose_name = "Підопічний"
         verbose_name_plural = "Підопічні"
@@ -150,3 +154,5 @@ class ActionLog(models.Model):
 
     def __str__(self):
         return f"{self.date:%d.%m.%Y} — {self.description[:50]}"
+
+  
