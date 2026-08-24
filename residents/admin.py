@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Center, Room, Resident, Role, Position, PositionAssignment, ActionLog
+from .models import Center, Room, Resident, Role, Position, PositionAssignment, ActionLog, RoleRequest
 
 admin.site.register(Center)
 admin.site.register(Role)
@@ -88,7 +88,7 @@ class ResidentAdmin(admin.ModelAdmin):
             # нужны редко, не должны отвлекать при обычном редактировании
         }),
     )
-    
+
     def _get_level(self, request):
         """Повертає рівень доступу поточного користувача (Position.Level) або None."""
         try:
@@ -110,3 +110,9 @@ class ResidentAdmin(admin.ModelAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
     
 admin.site.register(Resident, ResidentAdmin)
+
+@admin.register(RoleRequest)
+class RoleRequestAdmin(admin.ModelAdmin):
+    list_display = ('resident', 'current_role', 'target_role', 'initiated_by', 'status', 'created_at')
+    list_filter = ('status', 'target_role', 'created_at')
+    search_fields = ('resident__last_name', 'resident__first_name')

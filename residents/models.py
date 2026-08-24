@@ -167,4 +167,72 @@ class ActionLog(models.Model):
     def __str__(self):
         return f"{self.date:%d.%m.%Y} — {self.description[:50]}"
 
-  
+
+class RoleRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'На рассмотрении'
+        APPROVED = 'approved', 'Утверждено'
+        REJECTED = 'rejected', 'Отклонено'
+
+    # Кто предлагает (например, старший комнаты)
+    initiated_by = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='initiated_role_requests',
+        verbose_name='Хто запропонував'
+    )
+    
+    # Кому предлагают (житель)
+    resident = models.ForeignKey(
+        Resident, 
+        on_delete=models.CASCADE, 
+        related_name='role_requests',
+        verbose_name='Підопічний'
+    )
+    
+    # Текущая роль (чтобы было видно "С КАКОЙ РОЛИ")
+    current_role = models.ForeignKey(
+        Role,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='from_role_requests',
+        verbose_name='Поточна роль'
+    )
+
+    # Запрашиваемая роль (из списка ролей, созданного администратором — "НА КАКУЮ РОЛЬ")
+    target_role = models.ForeignKey(
+        Role,
+        on_delete=models.CASCADE,
+        related_name='to_role_requests',
+        verbose_name='Цільова роль'
+    )
+    
+    # Статус заявки
+    status = models.CharField(
+        max_length=20, 
+        choices=Status.choices, 
+        default=Status.PENDING,
+        verbose_name='Статус'
+    )
+    
+    # Кто реально утвердил (администратор / ответственный)
+    approved_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='approved_role_requests',
+        verbose_name='Хто затвердив'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата створення')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата оновлення')
+
+    class Meta:
+        verbose_name = "Заявка на зміну ролі"
+        verbose_name_plural = "Заявки на зміну ролей"
+
+    def __str__(self):
+        from_role = self.current_role.name if self.current_role else "Без ролі"
+        return f"Заявка: {self.resident.short_name} ({from_role} ➔ {self.target_role.name}) — {self.get_status_display()}"
