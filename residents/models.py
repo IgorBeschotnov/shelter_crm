@@ -18,6 +18,9 @@ class Room(models.Model):
     number = models.CharField(max_length=30, verbose_name="Номер/назва кімнати")
     center = models.ForeignKey(Center, on_delete=models.CASCADE, verbose_name="Центр")
     capacity = models.IntegerField(default=0, verbose_name="Місткість")
+    beds_upper = models.PositiveIntegerField(default=0, verbose_name="Верхніх місць")
+    beds_lower = models.PositiveIntegerField(default=0, verbose_name="Нижніх місць")
+    notes = models.TextField(null=True, blank=True, verbose_name="Примітки (інвентар тощо)")
 
     def __str__(self):
         return f"{self.center.name} — {self.number}"
@@ -27,6 +30,15 @@ class Resident(models.Model):
     class Gender(models.TextChoices):
         MALE = 'M', 'Чоловіча'
         FEMALE = 'F', 'Жіноча'
+
+    class BedType(models.TextChoices):
+        UPPER = 'upper', 'Верхнє'
+        LOWER = 'lower', 'Нижнє'
+
+    bed_type = models.CharField(
+        max_length=10, choices=BedType.choices, null=True, blank=True,
+        verbose_name="Місце"
+    )
 
     class Status(models.TextChoices):
         RESIDING = 'residing', 'Проживає'
