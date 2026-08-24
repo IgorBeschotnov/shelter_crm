@@ -38,7 +38,7 @@ class RoomAdmin(admin.ModelAdmin):
         lower_taken = obj.resident_set.filter(bed_type='lower').count()
         return f"Верх: {upper_taken}/{obj.beds_upper} · Низ: {lower_taken}/{obj.beds_lower}"
     occupancy.short_description = "Зайнятість"
-
+    
 
 admin.site.register(Room, RoomAdmin)
 
@@ -57,6 +57,38 @@ admin.site.register(PositionAssignment, PositionAssignmentAdmin)
 class ResidentAdmin(admin.ModelAdmin):
     filter_horizontal = ('roles',)
 
+    fieldsets = (
+        # Первый блок — кто это. Показывается первым, без подписи "Особисті дані"
+        # можно оставить пустым заголовком (None), если хочешь, чтобы он шёл
+        # без рамки-названия сверху — но с названием понятнее, оставляю с ним.
+        ('Особисті дані', {
+            'fields': ('full_name', 'sex', 'birth_date', 'phone', 'avatar'),
+            # avatar тут же, рядом с ФИО — логично, это тоже "личные данные"
+        }),
+
+        ('Проживання', {
+            'fields': ('room', 'bed_type', 'status', 'arrival_date', 'departure_date'),
+            # room и bed_type — где живёт; status — presence (проживає/вибув);
+            # даты прибытия/убытия тоже про физическое присутствие, поэтому здесь,
+            # а не в "Особисті дані"
+        }),
+
+        ('Ролі та статус', {
+            'fields': ('roles',),
+            # Всего одно поле, но выносим в отдельный блок — потому что
+            # filter_horizontal для M2M и так занимает много места на экране,
+            # ему лучше своя секция, чем теряться среди коротких полей
+        }),
+
+        ('Додатково', {
+            'fields': ('extra_attributes', 'notes'),
+            'classes': ('collapse',),
+            # 'collapse' — этот блок будет свёрнут по умолчанию при открытии формы.
+            # Логично: extra_attributes (JSON под нестандартные случаи) и notes
+            # нужны редко, не должны отвлекать при обычном редактировании
+        }),
+    )
+    
     def _get_level(self, request):
         """Повертає рівень доступу поточного користувача (Position.Level) або None."""
         try:

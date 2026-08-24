@@ -39,3 +39,40 @@ class ConsultationRequest(models.Model):
 
     def __str__(self):
         return f"{self.name} — {self.get_status_display()}"
+    
+class NewsPost(models.Model):
+    title = models.CharField(max_length=200, verbose_name="Заголовок")
+    text = models.TextField(verbose_name="Текст")
+    # photo/video через посилання (по ТЗ), не файловая загрузка —
+    # значит просто текстовые поля-ссылки, а не ImageField/FileField
+    photo_url = models.URLField(blank=True, verbose_name="Посилання на фото")
+    video_url = models.URLField(blank=True, verbose_name="Посилання на відео")
+    published_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата публікації")
+    # is_published — щоб можна було готувати чернетку і публікувати пізніше,
+    # не через created_at (коли написано), а явним флагом
+    is_published = models.BooleanField(default=False, verbose_name="Опубліковано")
+
+    def __str__(self):
+        return self.title
+
+
+class TeamMember(models.Model):
+    full_name = models.CharField(max_length=150, verbose_name="ПІБ")
+    position_title = models.CharField(max_length=150, verbose_name="Посада/роль")
+    bio = models.TextField(blank=True, verbose_name="Біографія")
+    photo_url = models.URLField(blank=True, verbose_name="Посилання на фото")
+    # center — якщо картка прив'язана до конкретного центру (лідерський склад
+    # центру), а не загальна для всієї мережі
+    center = models.ForeignKey(
+        'residents.Center', on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name="Центр"
+    )
+    # order — щоб самому визначати порядок показу на сайті (директор перший тощо),
+    # а не покладатися на алфавіт чи дату створення
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок показу")
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.full_name}"
